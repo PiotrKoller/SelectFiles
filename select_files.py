@@ -25,6 +25,7 @@ from qgis.core import QgsProject,QgsVectorLayer,QgsRasterLayer
 from qgis.PyQt.QtCore import QSettings, QTranslator, QCoreApplication
 from qgis.PyQt.QtGui import QIcon
 from qgis.PyQt.QtWidgets import QAction
+from qgis.utils import iface
 from PyQt5.QtWidgets import QAction, QFileDialog
 
 # Initialize Qt resources from file resources.py
@@ -183,14 +184,21 @@ class SelectFiles:
 
     def Upload_Directory(self):
         self.filename = QFileDialog.getExistingDirectory(
-        self.dlg, "Select   output file ","")
+        self.dlg, "Select input file ","")
         self.dlg.lineEdit.setText(self.filename)
+
+    def delete_layers(self):
+        QgsProject.instance().clear()
 
     def selection(self):
         for file in os.listdir(self.filename):
             if file.endswith(self.selectedFormat) and self.selectedFormat == ".tif":
                 layer = QgsRasterLayer(os.path.join(self.filename, file),file.split(".")[0])
                 QgsProject.instance().addMapLayers([layer])
+                vLayer = iface.activeLayer()
+                canvas = iface.mapCanvas()
+                extent = vLayer.extent()
+                canvas.setExtent(extent)
             if file.endswith(self.selectedFormat) and self.selectedFormat != ".tif":
                 layer = QgsVectorLayer(os.path.join(self.filename, file),file.split(".")[0],"ogr")
                 QgsProject.instance().addMapLayers([layer])
@@ -213,6 +221,7 @@ class SelectFiles:
         self.dlg.comboBox.addItems(self.datatypes)
 
         self.dlg.pushButton.clicked.connect(self.Upload_Directory)
+        self.dlg.pushButton_2.clicked.connect(self.delete_layers)
 
         self.selectedFileIndex = self.dlg.comboBox.currentIndex()
         self.selectedFormat = self.datatypes[self.selectedFileIndex]
